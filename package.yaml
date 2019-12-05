@@ -24,6 +24,7 @@ dependencies:
 - split
 - containers
 - gloss
+- sort
 
 library:
   source-dirs: src
