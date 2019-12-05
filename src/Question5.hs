@@ -16,7 +16,7 @@ question5a contents = do
     let strings = splitOn "," contents   
     let nums = map (read :: String -> Int) strings
     let firstI_Code = parseOpCode (head nums)
-    let stuff = operate nums firstI_Code (1 : (tail nums)) [] -- have to provide "1" as the first input
+    let stuff = operate nums firstI_Code (5 : (tail nums)) [] -- have to provide "1" as the first input
     stuff -- contains both the final ticker, and the log
 
 operate :: [Int] -> I_Code -> [Int] -> [Int] -> [[Int]]
@@ -34,12 +34,49 @@ operate nums (I_Code 3 p_m)  (input:a:xs) log    = do
     let newXs = lastN (length xs) newNums
     operate newNums (nextI_Code xs) (tail newXs) log
 operate nums (I_Code 4 p_m)  (a:xs) log          = operate nums (nextI_Code xs) (tail xs) ((useMode nums a $ p_m !! 0) : log)
+operate nums (I_Code 5 p_m)  (a:b:xs) log        = do
+    let aVal = (useMode nums a $ p_m !! 0)
+    if aVal /= 0 then do
+        let newXs = drop (useMode nums b $ p_m !! 1) nums
+        operate nums (nextI_Code newXs) (tail newXs) log
+    else
+        operate nums (nextI_Code xs) (tail xs) log
+operate nums (I_Code 6 p_m)  (a:b:xs) log        = do
+    let aVal = (useMode nums a $ p_m !! 0)
+    if aVal == 0 then do
+        let newXs = drop (useMode nums b $ p_m !! 1) nums
+        operate nums (nextI_Code newXs) (tail newXs) log
+    else
+        operate nums (nextI_Code xs) (tail xs) log
+operate nums (I_Code 7 p_m)  (a:b:c:xs) log        = do
+    let aVal = (useMode nums a $ p_m !! 0)
+    let bVal = (useMode nums b $ p_m !! 1)
+    if aVal < bVal then do
+        let newNums = (replace nums c 1)
+        let newXs = lastN (length xs) newNums
+        operate newNums (nextI_Code newXs) (tail newXs) log
+    else do
+        let newNums = (replace nums c 0)
+        let newXs = lastN (length xs) newNums
+        operate newNums (nextI_Code newXs) (tail newXs) log
+operate nums (I_Code 8 p_m)  (a:b:c:xs) log        = do
+    let aVal = (useMode nums a $ p_m !! 0)
+    let bVal = (useMode nums b $ p_m !! 1)
+    if aVal == bVal then do
+        let newNums = (replace nums c 1)
+        let newXs = lastN (length xs) newNums
+        operate newNums (nextI_Code newXs) (tail newXs) log
+    else do
+        let newNums = (replace nums c 0)
+        let newXs = lastN (length xs) newNums
+        operate newNums (nextI_Code newXs) (tail newXs) log
+        
 operate nums (I_Code 99 _) _ log                 = [nums, log]
 operate nums (I_Code hmm _)  x log               = [nums, (hmm:log)]
 
 useMode nums index Pos = do
-    let i = trace ("INDEX " ++ show index) $ index
-    nums !! i
+    -- let i = trace ("INDEX " ++ show index) $ index
+    nums !! index
 useMode nums val Im = val
 
 nextI_Code l = parseOpCode $ head l
@@ -49,13 +86,17 @@ getParamLength op
     | op == 2 = 3
     | op == 3 = 1
     | op == 4 = 1
+    | op == 5 = 2
+    | op == 6 = 2
+    | op == 7 = 3
+    | op == 8 = 3
     | op == 99 = 0
 
 -- parseOpCode :: Int -> I_Code
 parseOpCode x = do
     let asString = show x
     let opCode = getOpcode asString
-    let opCode = trace ("OP CODE " ++ asString) $ getOpcode asString
+    -- let opCode = trace ("OP CODE " ++ asString) $ getOpcode asString
 
     let paramLength = getParamLength opCode
     let padded = leftPad asString (paramLength + 2) "0" -- 2 is to accomodate the opcode digits
